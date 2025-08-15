@@ -1,0 +1,102 @@
+📋 STEP-BY-STEP LOCALHOST SETUP INSTRUCTIONS
+STEP 1: Download Project Files
+Get all the project files from your current source
+Make sure you have all folders: templates/, static/, services/, etc.
+Save them to a folder on your computer (e.g., C:\spectrum-sentinels\ or ~/spectrum-sentinels/)
+
+STEP 2: Install Python
+Download Python 3.8+ from python.org
+✅ IMPORTANT: Check "Add Python to PATH" during installation
+Verify: Open Command Prompt/Terminal and type python --version
+STEP 3: Run Automated Setup
+Open Command Prompt (Windows) or Terminal (Mac/Linux), navigate to your project folder:
+
+cd path/to/your/project/folder
+python setup_local.py
+This automatically:
+
+✅ Installs all required packages (Flask, SocketIO, NumPy, etc.)
+✅ Creates necessary directories
+✅ Sets up environment variables
+✅ Initializes the database
+✅ Creates startup scripts
+
+STEP 4: Start the Server
+Choose one method:
+
+Option A (Recommended):
+
+python start_server.py
+Option B (Direct):
+
+python run_server.py
+Option C (Development with auto-reload):
+
+python main.py
+STEP 5: Access Your Website
+Open your web browser and go to:
+
+http://localhost:5000
+STEP 6: Test the Website
+✅ Age Verification - Complete the initial setup
+✅ Upload Audio File - Test file upload and compression
+✅ View Heatmap - Check the real-time US RFI map
+✅ Real-time Updates - Verify WebSocket connectivity
+STEP 7: Optional SDR Sharp Integration
+Edit the .env file in your project folder
+Change: SDR_SHARP_PATH=C:\path\to\your\sdrsharp
+Restart the server
+🔧 CONFIGURATION FILES
+.env File Settings:
+DATABASE_URL=sqlite:///spectrum_sentinels.db
+SESSION_SECRET=spectrum-sentinels-dev-key
+UPLOAD_FOLDER=uploads
+AUDIO_DIRECTORY=audio_recordings
+SDR_SHARP_PATH=C:\sdrsharp              # Update this path
+SCISTARTER_API_KEY=demo-key             # Add real key if needed
+DEBUG=true
+HOST=0.0.0.0
+PORT=5000                               # Change if port 5000 is busy
+📁 PROJECT STRUCTURE
+your-project-folder/
+├── app.py                 # Flask application
+├── main.py               # Development server
+├── run_server.py         # Production server
+├── start_server.py       # Quick startup script
+├── setup_local.py        # Automated setup
+├── models.py             # Database models
+├── routes.py             # Web routes
+├── .env                  # Configuration file
+├── templates/            # HTML templates
+├── static/               # CSS, JS, images
+├── services/             # Background processing
+├── uploads/              # User uploaded files
+├── audio_recordings/     # SDR Sharp monitoring
+└── spectrum_sentinels.db # Local database
+✨ FEATURES ENABLED
+✅ Real-time US Geographic RFI Heatmap with radio astronomy filtering
+✅ Automatic File Compression on all uploads
+✅ Background RFI Processing with live updates
+✅ WebSocket Real-time Communication
+✅ Radio Astronomy Frequency Protection monitoring
+✅ SDR Sharp Auto-configuration (when path is set)
+🚨 TROUBLESHOOTING
+Port 5000 Already in Use:
+Edit .env file, change PORT=5000 to PORT=8000
+Restart server, go to http://localhost:8000
+Missing Packages Error:
+Run python setup_local.py again
+Or manually: pip install flask flask-socketio flask-sqlalchemy numpy scipy
+Database Errors:
+Delete spectrum_sentinels.db file
+Restart the server (it will recreate the database)
+SDR Sharp Not Working:
+Check that SDR_SHARP_PATH in .env points to correct folder
+Make sure SDR Sharp is installed
+🎯 QUICK START SUMMARY
+Download files to your computer
+Run: python setup_local.py
+Start: python start_server.py
+Open: http://localhost:5000
+Enjoy your real-time RFI detection website!
+The website will now run completely independently on your local machine with all the enhanced features including the US geographic heatmap, real-time compression, and radio astronomy frequency monitoring!
