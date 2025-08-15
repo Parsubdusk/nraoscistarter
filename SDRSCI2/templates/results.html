@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Results - NRAO Spectrum Sentinels{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h2 mb-1">
+                <i data-feather="list" class="me-2"></i>
+                Recording Results
+            </h1>
+            <p class="text-muted mb-0">
+                Browse and analyze uploaded recordings and RFI detections
+            </p>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-dark border-secondary">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">All Status</option>
+                                <option value="processed" {{ 'selected' if request.args.get('status') == 'processed' else '' }}>Processed</option>
+                                <option value="processing" {{ 'selected' if request.args.get('status') == 'processing' else '' }}>Processing</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="rfi_status" class="form-label">RFI Status</label>
+                            <select class="form-select" id="rfi_status" name="rfi_status">
+                                <option value="">All Recordings</option>
+                                <option value="detected" {{ 'selected' if request.args.get('rfi_status') == 'detected' else '' }}>RFI Detected</option>
+                                <option value="clean" {{ 'selected' if request.args.get('rfi_status') == 'clean' else '' }}>Clean</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="frequency" class="form-label">Frequency</label>
+                            <select class="form-select" id="frequency" name="frequency">
+                                <option value="">All Frequencies</option>
+                                <option value="1420-1421 MHz" {{ 'selected' if request.args.get('frequency') == '1420-1421 MHz' else '' }}>H1 Line (1420-1421 MHz)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i data-feather="filter" class="me-1"></i>
+                                Apply Filters
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-dark border-secondary">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i data-feather="database" class="me-2"></i>
+                        Recordings ({{ recordings.total }} total)
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if recordings.items %}
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Filename</th>
+                                        <th>Size</th>
+                                        <th>Frequency</th>
+                                        <th>Status</th>
+                                        <th>RFI</th>
+                                        <th>Upload Date</th>
+                                        <th>Location</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for recording in recordings.items %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ recording.original_filename }}</strong>
+                                                {% if recording.sample_rate %}
+                                                    <br><small class="text-muted">{{ recording.sample_rate }} Hz</small>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ (recording.file_size / 1024 / 1024)|round(1) }} MB</td>
+                                            <td>
+                                                {% if recording.center_frequency %}
+                                                    {{ (recording.center_frequency / 1e6)|round(3) }} MHz
+                                                    {% if recording.bandwidth %}
+                                                        <br><small class="text-muted">BW: {{ (recording.bandwidth / 1e3)|round(1) }} kHz</small>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="text-muted">Unknown</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if recording.processed %}
+                                                    <span class="badge bg-success">Processed</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning">Processing</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if recording.rfi_detected %}
+                                                    <span class="badge bg-danger">RFI Detected</span>
+                                                {% elif recording.processed %}
+                                                    <span class="badge bg-success">Clean</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Pending</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ recording.upload_timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                                            <td>
+                                                {% if recording.location_city and recording.location_country %}
+                                                    {{ recording.location_city }}, {{ recording.location_country }}
+                                                {% else %}
+                                                    <span class="text-muted">Unknown</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        {% if recordings.pages > 1 %}
+                            <div class="card-footer">
+                                <nav aria-label="Recording pagination">
+                                    <ul class="pagination justify-content-center mb-0">
+                                        {% if recordings.has_prev %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ url_for('results', page=recordings.prev_num) }}">Previous</a>
+                                            </li>
+                                        {% endif %}
+                                        
+                                        {% for page_num in recordings.iter_pages() %}
+                                            {% if page_num %}
+                                                {% if page_num != recordings.page %}
+                                                    <li class="page-item">
+                                                        <a class="page-link" href="{{ url_for('results', page=page_num) }}">{{ page_num }}</a>
+                                                    </li>
+                                                {% else %}
+                                                    <li class="page-item active">
+                                                        <span class="page-link">{{ page_num }}</span>
+                                                    </li>
+                                                {% endif %}
+                                            {% else %}
+                                                <li class="page-item disabled">
+                                                    <span class="page-link">…</span>
+                                                </li>
+                                            {% endif %}
+                                        {% endfor %}
+                                        
+                                        {% if recordings.has_next %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ url_for('results', page=recordings.next_num) }}">Next</a>
+                                            </li>
+                                        {% endif %}
+                                    </ul>
+                                </nav>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i data-feather="inbox" class="mb-3" style="width: 48px; height: 48px;"></i>
+                            <h5>No recordings found</h5>
+                            <p class="text-muted">No recordings match your current filters. <a href="{{ url_for('upload_file') }}">Upload a recording</a> to get started!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

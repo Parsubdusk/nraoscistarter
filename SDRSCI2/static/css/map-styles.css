@@ -1,0 +1,167 @@
+/**
+ * NRAO Spectrum Sentinels - Map Styles
+ * Custom styles for the RFI detection map
+ */
+
+/* Map container styles */
+#rfi-map {
+    border-radius: 0 0 var(--bs-border-radius) var(--bs-border-radius);
+    background-color: var(--bs-dark);
+}
+
+/* Leaflet popup customization for dark theme */
+.leaflet-popup-content-wrapper {
+    background-color: var(--bs-dark) !important;
+    color: var(--bs-light) !important;
+    border: 1px solid var(--bs-secondary) !important;
+    border-radius: var(--bs-border-radius) !important;
+}
+
+.leaflet-popup-tip {
+    background-color: var(--bs-dark) !important;
+    border: 1px solid var(--bs-secondary) !important;
+}
+
+.leaflet-popup-close-button {
+    color: var(--bs-light) !important;
+}
+
+.leaflet-popup-close-button:hover {
+    color: var(--bs-primary) !important;
+}
+
+/* Popup content styling */
+.popup-content {
+    min-width: 200px;
+}
+
+.popup-content h6 {
+    border-bottom: 1px solid var(--bs-secondary);
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.popup-content .small div {
+    margin-bottom: 0.25rem;
+}
+
+/* Legend styling */
+.legend-color {
+    flex-shrink: 0;
+}
+
+/* Leaflet control styling for dark theme */
+.leaflet-control-zoom a {
+    background-color: var(--bs-dark) !important;
+    border-color: var(--bs-secondary) !important;
+    color: var(--bs-light) !important;
+}
+
+.leaflet-control-zoom a:hover {
+    background-color: var(--bs-secondary) !important;
+    color: var(--bs-primary) !important;
+}
+
+.leaflet-control-attribution {
+    background-color: rgba(33, 37, 41, 0.8) !important;
+    color: var(--bs-light) !important;
+}
+
+.leaflet-control-attribution a {
+    color: var(--bs-primary) !important;
+}
+
+/* Loading overlay */
+#map-loading {
+    background-color: rgba(33, 37, 41, 0.9);
+    padding: 2rem;
+    border-radius: var(--bs-border-radius);
+    border: 1px solid var(--bs-secondary);
+}
+
+/* Spinner animation for loading icons */
+.spinner {
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Map view toggle buttons */
+.btn-group .btn-check:checked + .btn {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+
+/* Statistics cards */
+.card .h3 {
+    font-weight: 600;
+    font-size: 1.75rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #rfi-map {
+        height: 400px !important;
+    }
+    
+    .popup-content {
+        min-width: 150px;
+        font-size: 0.875rem;
+    }
+    
+    .legend-container {
+        position: relative !important;
+        margin-top: 1rem;
+    }
+}
+
+/* Dark theme overrides for better visibility */
+.leaflet-container {
+    background-color: var(--bs-dark);
+}
+
+.leaflet-tile {
+    filter: brightness(0.9) contrast(1.1);
+}
+
+/* Custom marker pulse animation for new detections */
+@keyframes marker-pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 0.7;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.marker-new {
+    animation: marker-pulse 2s ease-in-out 3;
+}
+
+/* High contrast mode for accessibility */
+@media (prefers-contrast: high) {
+    .leaflet-popup-content-wrapper {
+        border-width: 2px !important;
+    }
+    
+    .leaflet-tile {
+        filter: brightness(1) contrast(1.5);
+    }
+}
+
+/* Reduced motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .spinner,
+    .marker-new {
+        animation: none;
+    }
+}

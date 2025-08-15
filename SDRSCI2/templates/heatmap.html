@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global RFI Heatmap - NRAO Spectrum Sentinels</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    
+    <!-- Feather Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/feather-icons@4.29.0/dist/feather.min.css" rel="stylesheet">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Custom map styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/map-styles.css') }}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
+                <i data-feather="radio" class="me-2"></i>
+                NRAO Spectrum Sentinels
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}">
+                            <i data-feather="home" class="me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('upload_file') }}">
+                            <i data-feather="upload" class="me-1"></i>Upload
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('results') }}">
+                            <i data-feather="list" class="me-1"></i>Results
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('heatmap') }}">
+                            <i data-feather="map" class="me-1"></i>Global Heatmap
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container my-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="h2 mb-1">
+                            <i data-feather="globe" class="me-2"></i>
+                            Global RFI Detection Heatmap
+                        </h1>
+                        <p class="text-muted mb-0">
+                            Real-time visualization of radio frequency interference detected worldwide
+                        </p>
+                    </div>
+                    <div class="text-end">
+                        <div class="badge bg-success fs-6 mb-1">
+                            <i data-feather="activity" class="me-1"></i>
+                            Live Data
+                        </div>
+                        <div class="small text-muted">
+                            Updated: <span id="last-update">Live</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters and Controls -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">
+                            <i data-feather="filter" class="me-2"></i>
+                            Visualization Controls
+                        </h5>
+                        <form id="filter-form" class="row g-3">
+                            <div class="col-md-3">
+                                <label for="time-range" class="form-label">Time Range</label>
+                                <select class="form-select" id="time-range" name="hours">
+                                    <option value="1">Last Hour</option>
+                                    <option value="6">Last 6 Hours</option>
+                                    <option value="24" {{ 'selected' if hours == 24 else '' }}>Last 24 Hours</option>
+                                    <option value="168">Last Week</option>
+                                    <option value="720">Last Month</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="min-power" class="form-label">Minimum Power (dB)</label>
+                                <input type="number" class="form-control" id="min-power" name="min_power" 
+                                       value="{{ min_power }}" min="-120" max="0" step="5">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="frequency-band" class="form-label">Frequency Band</label>
+                                <select class="form-select" id="frequency-band">
+                                    <option value="all">All Frequencies</option>
+                                    <option value="h1_line">H1 Line (1420 MHz)</option>
+                                    <option value="continuum_74">74 MHz Continuum</option>
+                                    <option value="continuum_150">150 MHz Continuum</option>
+                                    <option value="l_band">L-band (1400-1700 MHz)</option>
+                                    <option value="c_band">C-band (4800-5000 MHz)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary me-2">
+                                    <i data-feather="refresh-cw" class="me-1"></i>
+                                    Update Map
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" id="auto-refresh-toggle">
+                                    <i data-feather="play" class="me-1"></i>
+                                    Auto-refresh
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-dark border-secondary text-center">
+                    <div class="card-body">
+                        <div class="h3 text-warning mb-1" id="total-detections">
+                            <i data-feather="loader" class="spinner"></i>
+                        </div>
+                        <div class="small text-muted">Total RFI Detections</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-dark border-secondary text-center">
+                    <div class="card-body">
+                        <div class="h3 text-info mb-1" id="active-locations">
+                            <i data-feather="loader" class="spinner"></i>
+                        </div>
+                        <div class="small text-muted">Active Locations</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-dark border-secondary text-center">
+                    <div class="card-body">
+                        <div class="h3 text-success mb-1" id="critical-band-alerts">
+                            <i data-feather="loader" class="spinner"></i>
+                        </div>
+                        <div class="small text-muted">Critical Band Alerts</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-dark border-secondary text-center">
+                    <div class="card-body">
+                        <div class="h3 text-danger mb-1" id="avg-power-level">
+                            <i data-feather="loader" class="spinner"></i>
+                        </div>
+                        <div class="small text-muted">Avg Power Level (dB)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Container -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i data-feather="map-pin" class="me-2"></i>
+                            Global RFI Detection Map
+                        </h5>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <input type="radio" class="btn-check" name="map-view" id="view-all" checked>
+                            <label class="btn btn-outline-primary" for="view-all">All</label>
+                            
+                            <input type="radio" class="btn-check" name="map-view" id="view-critical">
+                            <label class="btn btn-outline-danger" for="view-critical">Critical Only</label>
+                            
+                            <input type="radio" class="btn-check" name="map-view" id="view-clusters">
+                            <label class="btn btn-outline-info" for="view-clusters">Clusters</label>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <!-- Map will be rendered here -->
+                        <div id="rfi-map" style="height: 600px; width: 100%;"></div>
+                        
+                        <!-- Map Legend -->
+                        <div class="position-absolute bottom-0 start-0 m-3 bg-dark border border-secondary rounded p-2" style="z-index: 1000;">
+                            <div class="small fw-bold mb-2">RFI Intensity</div>
+                            <div class="d-flex align-items-center mb-1">
+                                <div class="legend-color bg-success me-2" style="width: 12px; height: 12px; border-radius: 50%;"></div>
+                                <span class="small">Low (-100 to -80 dB)</span>
+                            </div>
+                            <div class="d-flex align-items-center mb-1">
+                                <div class="legend-color bg-warning me-2" style="width: 12px; height: 12px; border-radius: 50%;"></div>
+                                <span class="small">Medium (-80 to -60 dB)</span>
+                            </div>
+                            <div class="d-flex align-items-center mb-1">
+                                <div class="legend-color bg-danger me-2" style="width: 12px; height: 12px; border-radius: 50%;"></div>
+                                <span class="small">High (-60+ dB)</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div class="legend-color bg-purple me-2" style="width: 12px; height: 12px; border-radius: 50%; background-color: #6f42c1 !important;"></div>
+                                <span class="small">Critical Astronomy Band</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Loading Overlay -->
+                        <div id="map-loading" class="position-absolute top-50 start-50 translate-middle text-center" style="z-index: 2000;">
+                            <div class="spinner-border text-primary mb-2" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <div class="text-muted">Loading RFI data...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Real-time Updates Info -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="alert alert-info d-flex align-items-center" role="alert">
+                    <i data-feather="info" class="me-2"></i>
+                    <div>
+                        <strong>Real-time Updates:</strong> This map automatically updates when new RFI detections are processed. 
+                        Green markers indicate recent uploads, while red markers show historical interference patterns.
+                        Critical radio astronomy bands are highlighted in purple when interference is detected.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons@4.29.0/dist/feather.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='js/map-visualization.js') }}"></script>
+    
+    <script>
+        // Initialize feather icons
+        feather.replace();
+        
+        // Initialize map visualization
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize the map
+            initializeRFIMap({
+                timeRange: {{ hours }},
+                minPower: {{ min_power }},
+                autoRefresh: true,
+                updateInterval: 30000 // 30 seconds
+            });
+            
+            // Update last update time
+            document.getElementById('last-update').textContent = new Date().toLocaleTimeString('en-US', {
+                timeZone: 'UTC',
+                hour12: false
+            }) + ' UTC';
+        });
+    </script>
+</body>
+</html>

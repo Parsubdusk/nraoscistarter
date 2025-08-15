@@ -1,0 +1,101 @@
+{
+    "SDRSharp": {
+        "settings": {
+            "centerFrequency": 1420406000,
+            "sampleRate": 2048000,
+            "rfGain": 25,
+            "mixerGain": 15,
+            "ifGain": 20,
+            "agcEnabled": false,
+            "fftSize": 16384,
+            "fftWindow": "BlackmanHarris4",
+            "fftContrast": 50,
+            "fftRange": 130,
+            "fftOffset": 0,
+            "fftAveraging": 0.8,
+            "displayMode": "Waterfall",
+            "waterfallLines": 2048,
+            "spectrumStyle": "Filled",
+            "zoom": 1.0,
+            "stepSize": 10000,
+            "snapToGrid": true,
+            "audioRecording": true,
+            "recordingPath": "/home/runner/workspace/audio_recordings",
+            "audioDevice": "Virtual Cable",
+            "audioSampleRate": 48000,
+            "audioGain": 15,
+            "squelchEnabled": false,
+            "noiseReduction": false,
+            "plugins": {
+                "FrequencyManager": true,
+                "FrequencyScanner": true,
+                "RecorderPlugin": true,
+                "DigitalModes": true
+            },
+            "criticalFrequencies": [
+                {
+                    "name": "H1 Line",
+                    "freq": 1420406000,
+                    "bandwidth": 1000000
+                },
+                {
+                    "name": "OH Lines",
+                    "freq": 1612231000,
+                    "bandwidth": 500000
+                },
+                {
+                    "name": "Radio Quiet Zone",
+                    "freq": 1400000000,
+                    "bandwidth": 27000000
+                },
+                {
+                    "name": "Continuum Band",
+                    "freq": 2695000000,
+                    "bandwidth": 5000000
+                }
+            ]
+        },
+        "scanning": {
+            "enabled": true,
+            "schedule": [
+                {
+                    "freq": 1420406000,
+                    "dwell_time": 30,
+                    "priority": "critical"
+                },
+                {
+                    "freq": 1413500000,
+                    "dwell_time": 15,
+                    "priority": "high"
+                },
+                {
+                    "freq": 1612231000,
+                    "dwell_time": 15,
+                    "priority": "high"
+                },
+                {
+                    "freq": 2695000000,
+                    "dwell_time": 10,
+                    "priority": "medium"
+                },
+                {
+                    "freq": 1000000000,
+                    "dwell_time": 5,
+                    "priority": "low"
+                },
+                {
+                    "freq": 2400000000,
+                    "dwell_time": 5,
+                    "priority": "low"
+                }
+            ],
+            "auto_record_threshold": -70,
+            "interference_detection": true
+        },
+        "automation": {
+            "launch_monitoring": true,
+            "auto_tune_critical_bands": true,
+            "real_time_analysis": true
+        }
+    }
+}

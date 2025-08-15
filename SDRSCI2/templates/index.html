@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - NRAO Spectrum Sentinels{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-1">
+                        <i data-feather="activity" class="me-2"></i>
+                        RFI Detection Dashboard
+                    </h1>
+                    <p class="text-muted mb-0">
+                        Real-time radio frequency interference monitoring for radio astronomy
+                    </p>
+                </div>
+                <div class="text-end">
+                    <a href="{{ url_for('launch_sdr') }}" class="btn btn-primary">
+                        <i data-feather="radio" class="me-1"></i>
+                        Launch SDR Sharp
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-dark border-secondary text-center">
+                <div class="card-body">
+                    <div class="h3 text-primary mb-1">{{ total_recordings }}</div>
+                    <div class="small text-muted">Total Recordings</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark border-secondary text-center">
+                <div class="card-body">
+                    <div class="h3 text-warning mb-1">{{ total_rfi }}</div>
+                    <div class="small text-muted">RFI Detections</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark border-secondary text-center">
+                <div class="card-body">
+                    <div class="h3 text-info mb-1">{{ processing_count }}</div>
+                    <div class="small text-muted">Processing Queue</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark border-secondary text-center">
+                <div class="card-body">
+                    <div class="h3 text-success mb-1">{{ recent_recordings|length }}</div>
+                    <div class="small text-muted">Recent Uploads</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-dark border-secondary">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="zap" class="me-2"></i>
+                        Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <a href="{{ url_for('upload_file') }}" class="btn btn-outline-primary w-100">
+                                <i data-feather="upload" class="me-2"></i>
+                                Upload Recording
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{{ url_for('heatmap') }}" class="btn btn-outline-info w-100">
+                                <i data-feather="map" class="me-2"></i>
+                                View Global Heatmap
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{{ url_for('results') }}" class="btn btn-outline-success w-100">
+                                <i data-feather="list" class="me-2"></i>
+                                Browse Results
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{{ url_for('launch_sdr') }}" class="btn btn-outline-warning w-100">
+                                <i data-feather="radio" class="me-2"></i>
+                                Launch SDR Sharp
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card bg-dark border-secondary">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="clock" class="me-2"></i>
+                        Recent Recordings
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_recordings %}
+                        <div class="list-group list-group-flush">
+                            {% for recording in recent_recordings %}
+                                <div class="list-group-item bg-transparent border-secondary">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">{{ recording.original_filename }}</h6>
+                                            <p class="mb-1 small text-muted">
+                                                {% if recording.center_frequency %}
+                                                    {{ (recording.center_frequency / 1e6)|round(3) }} MHz
+                                                {% endif %}
+                                                {% if recording.file_size %}
+                                                    • {{ (recording.file_size / 1024 / 1024)|round(1) }} MB
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                        <small class="text-muted">{{ recording.upload_timestamp.strftime('%H:%M') }}</small>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No recordings uploaded yet. <a href="{{ url_for('upload_file') }}">Upload your first recording</a>!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card bg-dark border-secondary">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="alert-triangle" class="me-2"></i>
+                        Recent RFI Detections
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_detections %}
+                        <div class="list-group list-group-flush">
+                            {% for detection, recording in recent_detections[:5] %}
+                                <div class="list-group-item bg-transparent border-secondary">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">
+                                                {{ (detection.frequency / 1e6)|round(3) }} MHz
+                                                {% if detection.is_radio_astronomy_band %}
+                                                    <span class="badge bg-danger">Critical</span>
+                                                {% endif %}
+                                            </h6>
+                                            <p class="mb-1 small text-muted">
+                                                {{ detection.power_level|round(1) }} dB
+                                                {% if detection.interference_type %}
+                                                    • {{ detection.interference_type }}
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                        <small class="text-muted">{{ detection.detected_at.strftime('%H:%M') }}</small>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No RFI detections yet. Upload recordings to start monitoring!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
