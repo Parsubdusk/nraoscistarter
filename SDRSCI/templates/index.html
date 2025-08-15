@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - NRAO Spectrum Sentinels{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Dashboard Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-1">
+                        <i data-feather="activity" class="me-2"></i>
+                        RFI Detection Dashboard
+                    </h1>
+                    <p class="text-muted mb-0">Real-time monitoring of radio frequency interference</p>
+                </div>
+                <div class="text-end">
+                    <div class="real-time-indicator">
+                        <span class="status-indicator status-online"></span>
+                        <span>Live Updates Active</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <i data-feather="database" class="text-primary mb-3" style="width: 2.5rem; height: 2.5rem;"></i>
+                    <div class="stats-number text-primary" id="total-recordings">{{ total_recordings|default(0) }}</div>
+                    <div class="stats-label text-muted">Total Recordings</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <i data-feather="zap" class="text-warning mb-3" style="width: 2.5rem; height: 2.5rem;"></i>
+                    <div class="stats-number text-warning" id="total-detections">{{ total_rfi|default(0) }}</div>
+                    <div class="stats-label text-muted">RFI Detections</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <i data-feather="clock" class="text-info mb-3" style="width: 2.5rem; height: 2.5rem;"></i>
+                    <div class="stats-number text-info" id="processing-count">{{ processing_count|default(0) }}</div>
+                    <div class="stats-label text-muted">Processing</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <i data-feather="upload" class="text-success mb-3" style="width: 2.5rem; height: 2.5rem;"></i>
+                    <div class="stats-number text-success" id="pending-count">0</div>
+                    <div class="stats-label text-muted">Pending</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Recent Activity Feed -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i data-feather="activity" class="me-2"></i>
+                        Recent Activity
+                    </h5>
+                    <div class="real-time-indicator">
+                        <span class="status-indicator status-online"></span>
+                        <small>Live</small>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="activity-feed" id="recent-recordings">
+                        {% for recording in recent_recordings %}
+                        <div class="activity-item" data-recording-id="{{ recording.id }}">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>{{ recording.original_filename }}</strong>
+                                    <div class="text-muted small">
+                                        Size: {{ "%.1f"|format(recording.file_size / 1024 / 1024) }} MB
+                                        {% if recording.compressed_size and recording.compression_ratio %}
+                                        <span class="compression-info">
+                                            → {{ "%.1f"|format(recording.compressed_size / 1024 / 1024) }} MB
+                                            <span class="compression-ratio {{ 'good' if recording.compression_ratio < 0.7 else 'moderate' if recording.compression_ratio < 0.9 else 'poor' }}">
+                                                {{ "%.0f"|format((1 - recording.compression_ratio) * 100) }}% saved
+                                            </span>
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <span class="activity-timestamp">{{ recording.upload_timestamp.strftime('%H:%M') }}</span>
+                            </div>
+                            <div class="processing-status {{ 'completed' if recording.processed else 'processing' }} mt-2">
+                                <span class="status-indicator {{ 'status-online' if recording.processed else 'status-processing' }}"></span>
+                                {{ 'Completed' if recording.processed else 'Processing' }}
+                                {% if recording.rfi_detected %}
+                                <span class="text-warning ms-2">RFI Detected</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions & System Status -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i data-feather="settings" class="me-2"></i>
+                        Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-3">
+                        <a href="{{ url_for('upload_file') }}" class="btn btn-primary btn-lg">
+                            <i data-feather="upload" class="me-2"></i>
+                            Upload Recording
+                        </a>
+                        
+                        <a href="{{ url_for('launch_sdr') }}" class="btn btn-outline-info btn-lg">
+                            <i data-feather="settings" class="me-2"></i>
+                            Launch SDR Sharp
+                        </a>
+                        
+                        <a href="{{ url_for('heatmap') }}" class="btn btn-outline-warning btn-lg">
+                            <i data-feather="activity" class="me-2"></i>
+                            View RFI Heatmap
+                        </a>
+                        
+                        <a href="{{ url_for('results') }}" class="btn btn-outline-secondary btn-lg">
+                            <i data-feather="database" class="me-2"></i>
+                            Browse Results
+                        </a>
+                    </div>
+                    
+                    <!-- System Status -->
+                    <div class="mt-4 pt-3 border-top">
+                        <h6 class="text-muted mb-3">System Status</h6>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>Real-time Processing</span>
+                            <span class="status-indicator status-online"></span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>File Monitoring</span>
+                            <span class="status-indicator status-online"></span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>SciStarter API</span>
+                            <span class="status-indicator status-online"></span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>Compression Engine</span>
+                            <span class="status-indicator status-online"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Detections -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i data-feather="zap" class="me-2"></i>
+                        Recent RFI Detections
+                    </h5>
+                    <div class="real-time-indicator">
+                        <span class="status-indicator status-online"></span>
+                        <small>Auto-updating</small>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="activity-feed" id="recent-detections" style="max-height: 300px;">
+                        <!-- Real-time detections will be populated here -->
+                        <div class="text-center text-muted p-4">
+                            <i data-feather="clock" class="mb-2"></i>
+                            <p>Waiting for new RFI detections...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Dashboard-specific JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize dashboard features
+    console.log('Dashboard initialized with real-time updates');
+    
+    // Add periodic refresh for dashboard stats
+    setInterval(function() {
+        // Stats are automatically updated via WebSocket
+        console.log('Dashboard heartbeat');
+    }, 30000);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Recording - NRAO Spectrum Sentinels{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Upload Header -->
+            <div class="mb-4">
+                <h1 class="h2 mb-1">
+                    <i data-feather="upload" class="me-2"></i>
+                    Upload Audio Recording
+                </h1>
+                <p class="text-muted mb-0">Upload SDR recordings for automated RFI analysis</p>
+            </div>
+
+            <!-- Upload Form Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i data-feather="file-plus" class="me-2"></i>
+                        Select Recording File
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data" id="upload-form">
+                        <!-- File Upload Zone -->
+                        <div class="upload-zone mb-4" id="upload-zone">
+                            <div class="text-center">
+                                <i data-feather="upload-cloud" style="width: 3rem; height: 3rem;" class="text-muted mb-3"></i>
+                                <h5>Drag & drop your audio file here</h5>
+                                <p class="text-muted mb-3">or click to browse files</p>
+                                <input type="file" name="file" id="file" class="form-control" accept=".wav,.flac,.ogg,.mp3,.aiff,.au,.raw,.iq,.bin" required style="display: none;">
+                                <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('file').click();">
+                                    <i data-feather="folder" class="me-2"></i>
+                                    Browse Files
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Selected File Display -->
+                        <div id="selected-file" class="mb-4" style="display: none;">
+                            <div class="alert alert-info d-flex align-items-center">
+                                <i data-feather="file" class="me-2"></i>
+                                <div>
+                                    <strong>Selected File:</strong> <span id="file-name"></span><br>
+                                    <small class="text-muted">Size: <span id="file-size"></span></small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Upload Progress -->
+                        <div class="upload-progress" id="upload-progress">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>Uploading and compressing...</span>
+                                <span id="progress-percent">0%</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" id="progress-bar" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Recording Metadata -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="frequency_range" class="form-label">
+                                    <i data-feather="radio" class="me-1"></i>
+                                    Frequency Range (optional)
+                                </label>
+                                <input type="text" class="form-control" id="frequency_range" name="frequency_range" 
+                                       placeholder="e.g., 144-146 MHz">
+                                <div class="form-text">Specify the frequency range of your recording</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="sample_rate" class="form-label">
+                                    <i data-feather="activity" class="me-1"></i>
+                                    Sample Rate (Hz)
+                                </label>
+                                <input type="number" class="form-control" id="sample_rate" name="sample_rate" 
+                                       placeholder="e.g., 48000">
+                                <div class="form-text">Audio sample rate in Hz</div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">
+                                <i data-feather="upload" class="me-2"></i>
+                                Upload & Analyze Recording
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Upload Instructions -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i data-feather="help-circle" class="me-2"></i>
+                        Supported File Formats & Guidelines
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-info">Supported Formats:</h6>
+                            <ul class="list-unstyled mb-3">
+                                <li><i data-feather="check" class="me-2 text-success" style="width: 16px; height: 16px;"></i>WAV (recommended)</li>
+                                <li><i data-feather="check" class="me-2 text-success" style="width: 16px; height: 16px;"></i>FLAC (compressed)</li>
+                                <li><i data-feather="check" class="me-2 text-success" style="width: 16px; height: 16px;"></i>OGG, MP3</li>
+                                <li><i data-feather="check" class="me-2 text-success" style="width: 16px; height: 16px;"></i>Raw SDR data (.raw, .iq, .bin)</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-warning">Optimal Settings:</h6>
+                            <ul class="list-unstyled mb-3">
+                                <li><i data-feather="settings" class="me-2 text-warning" style="width: 16px; height: 16px;"></i>Sample Rate: 48 kHz+</li>
+                                <li><i data-feather="settings" class="me-2 text-warning" style="width: 16px; height: 16px;"></i>Duration: 10-300 seconds</li>
+                                <li><i data-feather="settings" class="me-2 text-warning" style="width: 16px; height: 16px;"></i>Max Size: 500 MB</li>
+                                <li><i data-feather="settings" class="me-2 text-warning" style="width: 16px; height: 16px;"></i>Auto-compression enabled</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="alert alert-info mb-0">
+                        <i data-feather="info" class="me-2"></i>
+                        <strong>Real-time Processing:</strong> Your file will be automatically compressed and analyzed for RFI patterns. 
+                        Results will appear in real-time on the dashboard and results page.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Real-time Status -->
+            <div class="card mt-4" id="realtime-status" style="display: none;">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i data-feather="activity" class="me-2"></i>
+                        Processing Status
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="status-indicator status-processing me-3"></div>
+                        <div>
+                            <div class="fw-bold">Processing your recording...</div>
+                            <div class="text-muted small" id="processing-details">Initializing RFI analysis</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('file');
+    const selectedFileDiv = document.getElementById('selected-file');
+    const fileName = document.getElementById('file-name');
+    const fileSize = document.getElementById('file-size');
+    const uploadProgress = document.getElementById('upload-progress');
+    const progressBar = document.getElementById('progress-bar');
+    const progressPercent = document.getElementById('progress-percent');
+    const submitBtn = document.getElementById('submit-btn');
+    const uploadForm = document.getElementById('upload-form');
+    const realtimeStatus = document.getElementById('realtime-status');
+
+    // File selection handler
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            selectedFileDiv.style.display = 'block';
+        } else {
+            selectedFileDiv.style.display = 'none';
+        }
+    });
+
+    // Form submission handler
+    uploadForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!fileInput.files[0]) {
+            alert('Please select a file to upload');
+            return;
+        }
+
+        // Show progress
+        uploadProgress.style.display = 'block';
+        submitBtn.disabled = true;
+        
+        // Simulate upload progress (in real implementation, use XHR with progress events)
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            progress += 2;
+            updateProgress(progress);
+            
+            if (progress >= 90) {
+                clearInterval(progressInterval);
+                // Submit the actual form
+                this.submit();
+            }
+        }, 100);
+    });
+
+    function updateProgress(percent) {
+        progressBar.style.width = percent + '%';
+        progressPercent.textContent = percent + '%';
+        
+        if (percent < 30) {
+            document.getElementById('progress-percent').parentNode.querySelector('span').textContent = 'Uploading file...';
+        } else if (percent < 60) {
+            document.getElementById('progress-percent').parentNode.querySelector('span').textContent = 'Compressing file...';
+        } else if (percent < 90) {
+            document.getElementById('progress-percent').parentNode.querySelector('span').textContent = 'Processing upload...';
+        }
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // Real-time WebSocket handlers
+    if (window.realtimeClient) {
+        window.realtimeClient.on('file_uploaded', function(data) {
+            realtimeStatus.style.display = 'block';
+            document.getElementById('processing-details').textContent = 
+                `File compressed (${(data.compression_ratio * 100).toFixed(0)}% of original size). Starting RFI analysis...`;
+        });
+
+        window.realtimeClient.on('processing_started', function(data) {
+            document.getElementById('processing-details').textContent = 'RFI detection in progress...';
+        });
+
+        window.realtimeClient.on('processing_completed', function(data) {
+            const statusCard = realtimeStatus.querySelector('.card-body');
+            statusCard.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <div class="status-indicator status-online me-3"></div>
+                    <div>
+                        <div class="fw-bold text-success">Processing Complete!</div>
+                        <div class="text-muted small">
+                            ${data.rfi_detected ? 
+                                `Found ${data.detections_found} RFI detections` : 
+                                'No RFI detected - clean recording'
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <a href="/results" class="btn btn-primary btn-sm">
+                        <i data-feather="eye" class="me-1"></i>View Results
+                    </a>
+                    <a href="/heatmap" class="btn btn-outline-info btn-sm ms-2">
+                        <i data-feather="activity" class="me-1"></i>View Heatmap
+                    </a>
+                </div>
+            `;
+            feather.replace();
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+
+{% block title %}Age Verification - NRAO Spectrum Sentinels{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+            <!-- Verification Header -->
+            <div class="text-center mb-4">
+                <i data-feather="shield" style="width: 4rem; height: 4rem;" class="text-warning mb-3"></i>
+                <h1 class="h2 mb-3">Age Verification Required</h1>
+                <p class="text-muted">
+                    To participate in this citizen science project, we need to verify your age and obtain your consent for data collection.
+                </p>
+            </div>
+
+            <!-- Verification Form Card -->
+            <div class="card">
+                <div class="card-header text-center">
+                    <h5 class="card-title mb-0">
+                        <i data-feather="user-check" class="me-2"></i>
+                        Verification & Consent
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <!-- Age Verification Section -->
+                        <div class="mb-4">
+                            <h6 class="text-info mb-3">
+                                <i data-feather="calendar" class="me-2"></i>
+                                Age Verification
+                            </h6>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="age_confirmation" name="age_confirmation" required>
+                                <label class="form-check-label" for="age_confirmation">
+                                    <strong>I confirm that I am 18 years of age or older</strong>
+                                </label>
+                            </div>
+                            <div class="form-text">
+                                You must be at least 18 years old to participate in this research project.
+                            </div>
+                        </div>
+
+                        <!-- Data Consent Section -->
+                        <div class="mb-4">
+                            <h6 class="text-warning mb-3">
+                                <i data-feather="database" class="me-2"></i>
+                                Data Collection Consent
+                            </h6>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="data_consent" name="data_consent" required>
+                                <label class="form-check-label" for="data_consent">
+                                    <strong>I consent to the collection and use of my data for research purposes</strong>
+                                </label>
+                            </div>
+                            <div class="alert alert-info mt-3">
+                                <h6 class="alert-heading">
+                                    <i data-feather="info" class="me-2"></i>
+                                    What data do we collect?
+                                </h6>
+                                <ul class="mb-0">
+                                    <li>Location information (city, state, country) for research compliance</li>
+                                    <li>Audio recordings you upload for RFI analysis</li>
+                                    <li>Session data and activity logs for citizen science tracking</li>
+                                    <li>Technical metadata from your recordings (frequency, sample rate, etc.)</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Location Information -->
+                        <div class="mb-4">
+                            <h6 class="text-success mb-3">
+                                <i data-feather="map-pin" class="me-2"></i>
+                                Location Information (Required)
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="country" class="form-label">Country</label>
+                                    <input type="text" class="form-control" id="country" name="country" 
+                                           placeholder="e.g., United States" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="state" class="form-label">State/Province</label>
+                                    <input type="text" class="form-control" id="state" name="state" 
+                                           placeholder="e.g., California">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="city" class="form-label">City</label>
+                                    <input type="text" class="form-control" id="city" name="city" 
+                                           placeholder="e.g., Los Angeles">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <button type="button" class="btn btn-outline-info btn-sm mt-4" onclick="getCurrentLocation()">
+                                        <i data-feather="crosshair" class="me-1"></i>
+                                        Auto-detect Location
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- GPS Coordinates (Optional) -->
+                        <div class="mb-4">
+                            <h6 class="text-secondary mb-3">
+                                <i data-feather="navigation" class="me-2"></i>
+                                Precise Location (Optional)
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="latitude" class="form-label">Latitude</label>
+                                    <input type="number" class="form-control" id="latitude" name="latitude" 
+                                           step="any" placeholder="e.g., 34.0522">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="longitude" class="form-label">Longitude</label>
+                                    <input type="number" class="form-control" id="longitude" name="longitude" 
+                                           step="any" placeholder="e.g., -118.2437">
+                                </div>
+                            </div>
+                            <div class="form-text">
+                                Providing precise coordinates helps improve the accuracy of RFI mapping and research analysis.
+                            </div>
+                        </div>
+
+                        <!-- Research Information -->
+                        <div class="mb-4">
+                            <div class="alert alert-primary">
+                                <h6 class="alert-heading">
+                                    <i data-feather="book" class="me-2"></i>
+                                    About This Research
+                                </h6>
+                                <p class="mb-2">
+                                    <strong>NRAO Spectrum Sentinels</strong> is a citizen science project affiliated with the 
+                                    National Radio Astronomy Observatory (NRAO) focused on detecting and cataloging radio 
+                                    frequency interference (RFI) that affects radio astronomy observations.
+                                </p>
+                                <p class="mb-0">
+                                    Your contributions help protect radio astronomy research by crowdsourcing interference 
+                                    detection and analysis. Data collected is used for research purposes and may be shared 
+                                    with the scientific community.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Privacy Notice -->
+                        <div class="mb-4">
+                            <div class="alert alert-warning">
+                                <h6 class="alert-heading">
+                                    <i data-feather="lock" class="me-2"></i>
+                                    Privacy Notice
+                                </h6>
+                                <ul class="mb-0">
+                                    <li>Your personal information is protected and used only for research purposes</li>
+                                    <li>Location data is aggregated and anonymized for scientific analysis</li>
+                                    <li>You can withdraw from the project at any time</li>
+                                    <li>Data may be shared with scientific institutions for research purposes</li>
+                                    <li>We comply with applicable data protection regulations</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success btn-lg" id="submit-btn">
+                                <i data-feather="check-circle" class="me-2"></i>
+                                Verify Age & Enter Project
+                            </button>
+                        </div>
+
+                        <!-- Legal Notice -->
+                        <div class="text-center mt-4">
+                            <small class="text-muted">
+                                By proceeding, you acknowledge that you have read and understood the data collection 
+                                practices and agree to participate in this citizen science research project.
+                            </small>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Additional Information -->
+            <div class="text-center mt-4">
+                <p class="text-muted">
+                    Questions about this research? Contact the NRAO Spectrum Sentinels team.
+                </p>
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="#" class="text-info">
+                        <i data-feather="mail" class="me-1"></i>Contact
+                    </a>
+                    <a href="#" class="text-info">
+                        <i data-feather="help-circle" class="me-1"></i>FAQ
+                    </a>
+                    <a href="#" class="text-info">
+                        <i data-feather="file-text" class="me-1"></i>Privacy Policy
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const submitBtn = document.getElementById('submit-btn');
+    const ageCheckbox = document.getElementById('age_confirmation');
+    const consentCheckbox = document.getElementById('data_consent');
+    const countryInput = document.getElementById('country');
+
+    // Form validation
+    function updateSubmitButton() {
+        const isValid = ageCheckbox.checked && consentCheckbox.checked && countryInput.value.trim();
+        submitBtn.disabled = !isValid;
+        
+        if (isValid) {
+            submitBtn.classList.remove('btn-secondary');
+            submitBtn.classList.add('btn-success');
+        } else {
+            submitBtn.classList.remove('btn-success');
+            submitBtn.classList.add('btn-secondary');
+        }
+    }
+
+    // Add event listeners
+    [ageCheckbox, consentCheckbox, countryInput].forEach(input => {
+        input.addEventListener('change', updateSubmitButton);
+        input.addEventListener('input', updateSubmitButton);
+    });
+
+    // Initial state
+    updateSubmitButton();
+
+    // Form submission
+    form.addEventListener('submit', function(e) {
+        if (!ageCheckbox.checked || !consentCheckbox.checked || !countryInput.value.trim()) {
+            e.preventDefault();
+            alert('Please complete all required fields and confirmations.');
+            return;
+        }
+
+        // Show loading state
+        submitBtn.innerHTML = '<i data-feather="loader" class="me-2"></i>Verifying...';
+        submitBtn.disabled = true;
+    });
+});
+
+function getCurrentLocation() {
+    if (!navigator.geolocation) {
+        alert('Geolocation is not supported by this browser.');
+        return;
+    }
+
+    const button = event.target.closest('button');
+    const originalHTML = button.innerHTML;
+    button.innerHTML = '<i data-feather="loader" class="me-1"></i>Detecting...';
+    button.disabled = true;
+
+    navigator.geolocation.getCurrentPosition(
+        function(position) {
+            document.getElementById('latitude').value = position.coords.latitude.toFixed(6);
+            document.getElementById('longitude').value = position.coords.longitude.toFixed(6);
+            
+            // Try to reverse geocode to fill in location fields
+            reverseGeocode(position.coords.latitude, position.coords.longitude);
+            
+            button.innerHTML = '<i data-feather="check" class="me-1"></i>Location Detected';
+            button.classList.remove('btn-outline-info');
+            button.classList.add('btn-outline-success');
+            
+            setTimeout(() => {
+                button.innerHTML = originalHTML;
+                button.classList.remove('btn-outline-success');
+                button.classList.add('btn-outline-info');
+                button.disabled = false;
+                feather.replace();
+            }, 3000);
+        },
+        function(error) {
+            let message = 'Unable to retrieve location.';
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    message = 'Location access denied by user.';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    message = 'Location information unavailable.';
+                    break;
+                case error.TIMEOUT:
+                    message = 'Location request timed out.';
+                    break;
+            }
+            
+            alert(message);
+            button.innerHTML = originalHTML;
+            button.disabled = false;
+            feather.replace();
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 600000
+        }
+    );
+}
+
+function reverseGeocode(lat, lon) {
+    // In a real implementation, you would use a geocoding service
+    // For this demo, we'll simulate it
+    console.log(`Reverse geocoding: ${lat}, ${lon}`);
+    
+    // This is where you would make an API call to a geocoding service
+    // For now, we'll just show that the coordinates were captured
+}
+</script>
+{% endblock %}

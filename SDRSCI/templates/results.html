@@ -1,0 +1,498 @@
+{% extends "base.html" %}
+
+{% block title %}Results - NRAO Spectrum Sentinels{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Results Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-1">
+                        <i data-feather="database" class="me-2"></i>
+                        Recording Results
+                    </h1>
+                    <p class="text-muted mb-0">Browse and analyze uploaded recordings with real-time updates</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <div class="real-time-indicator">
+                        <span class="status-indicator status-online"></span>
+                        <span>Live Updates</span>
+                    </div>
+                    <a href="{{ url_for('upload_file') }}" class="btn btn-primary">
+                        <i data-feather="upload" class="me-2"></i>
+                        Upload New Recording
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Controls -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label">Status Filter</label>
+                            <select class="form-select" id="status-filter">
+                                <option value="all">All Recordings</option>
+                                <option value="processed">Processed</option>
+                                <option value="processing">Processing</option>
+                                <option value="rfi_detected">RFI Detected</option>
+                                <option value="clean">Clean Recordings</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Date Range</label>
+                            <select class="form-select" id="date-filter">
+                                <option value="all">All Time</option>
+                                <option value="today">Today</option>
+                                <option value="week">This Week</option>
+                                <option value="month">This Month</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">File Type</label>
+                            <select class="form-select" id="type-filter">
+                                <option value="all">All Types</option>
+                                <option value="wav">WAV Files</option>
+                                <option value="flac">FLAC Files</option>
+                                <option value="raw">Raw SDR Data</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-outline-secondary" onclick="resetFilters()">
+                                <i data-feather="refresh-cw" class="me-1"></i>Reset Filters
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i data-feather="list" class="me-2"></i>
+                        Recordings
+                    </h5>
+                    <small class="text-muted">
+                        Showing {{ recordings.items|length }} of {{ recordings.total }} recordings
+                    </small>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>File</th>
+                                    <th>Upload Time</th>
+                                    <th>Size</th>
+                                    <th>Compression</th>
+                                    <th>Status</th>
+                                    <th>RFI Detections</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="results-tbody">
+                                {% for recording in recordings.items %}
+                                <tr data-recording-id="{{ recording.id }}" class="recording-row">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i data-feather="file-audio" class="me-2 text-info" style="width: 18px; height: 18px;"></i>
+                                            <div>
+                                                <div class="fw-bold">{{ recording.original_filename }}</div>
+                                                <small class="text-muted">
+                                                    {% if recording.frequency_range %}
+                                                        {{ recording.frequency_range }}
+                                                    {% endif %}
+                                                    {% if recording.sample_rate %}
+                                                        • {{ recording.sample_rate }} Hz
+                                                    {% endif %}
+                                                    {% if recording.duration %}
+                                                        • {{ "%.1f"|format(recording.duration) }}s
+                                                    {% endif %}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>{{ recording.upload_timestamp.strftime('%Y-%m-%d') }}</div>
+                                        <small class="text-muted">{{ recording.upload_timestamp.strftime('%H:%M:%S') }}</small>
+                                    </td>
+                                    <td>
+                                        <div>{{ "%.1f"|format(recording.file_size / 1024 / 1024) }} MB</div>
+                                        {% if recording.compressed_size %}
+                                        <small class="text-muted">
+                                            Original: {{ "%.1f"|format(recording.file_size / 1024 / 1024) }} MB
+                                        </small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if recording.compression_ratio %}
+                                            {% set compression_saved = ((1 - recording.compression_ratio) * 100)|round(1) %}
+                                            <span class="compression-ratio {{ 'good' if compression_saved > 30 else 'moderate' if compression_saved > 10 else 'poor' }}">
+                                                {{ compression_saved }}% saved
+                                            </span>
+                                            <div class="small text-muted">
+                                                {{ "%.1f"|format(recording.compressed_size / 1024 / 1024) }} MB final
+                                            </div>
+                                        {% else %}
+                                            <span class="text-muted">No compression</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="processing-status {{ 'completed' if recording.processed else 'processing' if recording.processing_started_at else 'pending' }}">
+                                            <span class="status-indicator 
+                                                {{ 'status-online' if recording.processed else 'status-processing' if recording.processing_started_at else 'status-offline' }}">
+                                            </span>
+                                            {{ 'Completed' if recording.processed else 'Processing' if recording.processing_started_at else 'Pending' }}
+                                        </div>
+                                        {% if recording.processing_completed_at %}
+                                        <small class="text-muted">
+                                            {{ recording.processing_completed_at.strftime('%H:%M:%S') }}
+                                        </small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if recording.processed %}
+                                            {% set detection_count = recording.detections.count() %}
+                                            {% if detection_count > 0 %}
+                                                <span class="badge bg-warning text-dark">
+                                                    <i data-feather="zap" style="width: 14px; height: 14px;"></i>
+                                                    {{ detection_count }} RFI
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-success">
+                                                    <i data-feather="check" style="width: 14px; height: 14px;"></i>
+                                                    Clean
+                                                </span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">Analyzing...</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <button type="button" class="btn btn-sm btn-outline-info" 
+                                                    onclick="viewDetails({{ recording.id }})" 
+                                                    {% if not recording.processed %}disabled{% endif %}>
+                                                <i data-feather="eye" style="width: 14px; height: 14px;"></i>
+                                            </button>
+                                            {% if recording.detections.count() > 0 %}
+                                            <button type="button" class="btn btn-sm btn-outline-warning" 
+                                                    onclick="viewHeatmap({{ recording.id }})">
+                                                <i data-feather="activity" style="width: 14px; height: 14px;"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if recordings.pages > 1 %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav aria-label="Results pagination">
+                <ul class="pagination justify-content-center">
+                    {% if recordings.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('results', page=recordings.prev_num) }}">
+                            <i data-feather="chevron-left" style="width: 16px; height: 16px;"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in recordings.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=3) %}
+                        {% if page_num %}
+                            {% if page_num != recordings.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('results', page=page_num) }}">{{ page_num }}</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">…</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if recordings.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('results', page=recordings.next_num) }}">
+                            <i data-feather="chevron-right" style="width: 16px; height: 16px;"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Recording Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">
+                    <i data-feather="file-audio" class="me-2"></i>
+                    Recording Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <div class="text-center">
+                    <div class="spinner-border text-info" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let detailsModal;
+
+document.addEventListener('DOMContentLoaded', function() {
+    detailsModal = new bootstrap.Modal(document.getElementById('detailsModal'));
+    
+    // Real-time updates for results
+    if (window.realtimeClient) {
+        window.realtimeClient.on('file_uploaded', function(data) {
+            // Add new recording to table
+            addNewRecordingRow(data);
+        });
+
+        window.realtimeClient.on('processing_completed', function(data) {
+            // Update processing status
+            updateRecordingStatus(data.recording_id, data);
+        });
+
+        window.realtimeClient.on('processing_failed', function(data) {
+            // Update with error status
+            updateRecordingStatus(data.recording_id, { error: data.error });
+        });
+    }
+});
+
+function viewDetails(recordingId) {
+    detailsModal.show();
+    
+    fetch(`/api/recording/${recordingId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayRecordingDetails(data.recording, data.detections);
+            } else {
+                document.getElementById('modal-body').innerHTML = 
+                    '<div class="alert alert-danger">Error loading recording details</div>';
+            }
+        })
+        .catch(error => {
+            document.getElementById('modal-body').innerHTML = 
+                '<div class="alert alert-danger">Failed to load recording details</div>';
+        });
+}
+
+function displayRecordingDetails(recording, detections) {
+    let detectionsList = '';
+    if (detections && detections.length > 0) {
+        detectionsList = detections.map(d => `
+            <tr>
+                <td>${(d.frequency / 1e6).toFixed(2)} MHz</td>
+                <td>${d.power_level.toFixed(1)} dB</td>
+                <td>${d.interference_type || 'Unknown'}</td>
+                <td>${(d.confidence * 100).toFixed(0)}%</td>
+                <td>${d.timestamp.toFixed(2)}s</td>
+            </tr>
+        `).join('');
+    }
+
+    document.getElementById('modal-body').innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6>File Information</h6>
+                <table class="table table-dark table-sm">
+                    <tr><td>Filename:</td><td>${recording.filename}</td></tr>
+                    <tr><td>Upload Time:</td><td>${new Date(recording.upload_time).toLocaleString()}</td></tr>
+                    <tr><td>File Size:</td><td>${(recording.file_size / 1024 / 1024).toFixed(1)} MB</td></tr>
+                    ${recording.compressed_size ? `<tr><td>Compressed Size:</td><td>${(recording.compressed_size / 1024 / 1024).toFixed(1)} MB</td></tr>` : ''}
+                    ${recording.compression_ratio ? `<tr><td>Compression:</td><td>${((1 - recording.compression_ratio) * 100).toFixed(1)}% saved</td></tr>` : ''}
+                    ${recording.sample_rate ? `<tr><td>Sample Rate:</td><td>${recording.sample_rate} Hz</td></tr>` : ''}
+                    ${recording.duration ? `<tr><td>Duration:</td><td>${recording.duration.toFixed(1)} seconds</td></tr>` : ''}
+                    ${recording.frequency_range ? `<tr><td>Frequency Range:</td><td>${recording.frequency_range}</td></tr>` : ''}
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6>Processing Status</h6>
+                <div class="processing-status ${recording.processed ? 'completed' : 'processing'} mb-3">
+                    <span class="status-indicator ${recording.processed ? 'status-online' : 'status-processing'}"></span>
+                    ${recording.processed ? 'Completed' : 'Processing'}
+                </div>
+                ${recording.rfi_detected ? 
+                    `<div class="alert alert-warning"><i data-feather="zap" class="me-2"></i>RFI Detected</div>` : 
+                    recording.processed ? `<div class="alert alert-success"><i data-feather="check" class="me-2"></i>Clean Recording</div>` : ''
+                }
+            </div>
+        </div>
+        ${detections && detections.length > 0 ? `
+            <h6 class="mt-4">RFI Detections</h6>
+            <div class="table-responsive">
+                <table class="table table-dark table-sm">
+                    <thead>
+                        <tr>
+                            <th>Frequency</th>
+                            <th>Power Level</th>
+                            <th>Type</th>
+                            <th>Confidence</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>${detectionsList}</tbody>
+                </table>
+            </div>
+        ` : ''}
+    `;
+    feather.replace();
+}
+
+function viewHeatmap(recordingId) {
+    window.location.href = `/heatmap?recording_id=${recordingId}`;
+}
+
+function resetFilters() {
+    document.getElementById('status-filter').value = 'all';
+    document.getElementById('date-filter').value = 'all';
+    document.getElementById('type-filter').value = 'all';
+    // In a real implementation, you would apply these filters
+}
+
+function addNewRecordingRow(data) {
+    // Add new recording to top of table
+    const tbody = document.getElementById('results-tbody');
+    const row = document.createElement('tr');
+    row.className = 'recording-row';
+    row.setAttribute('data-recording-id', data.id);
+    row.innerHTML = `
+        <td>
+            <div class="d-flex align-items-center">
+                <i data-feather="file-audio" class="me-2 text-info" style="width: 18px; height: 18px;"></i>
+                <div>
+                    <div class="fw-bold">${data.filename}</div>
+                    <small class="text-muted">Just uploaded</small>
+                </div>
+            </div>
+        </td>
+        <td>
+            <div>${new Date(data.timestamp).toLocaleDateString()}</div>
+            <small class="text-muted">${new Date(data.timestamp).toLocaleTimeString()}</small>
+        </td>
+        <td>
+            <div>${(data.size / 1024 / 1024).toFixed(1)} MB</div>
+        </td>
+        <td>
+            ${data.compression_ratio ? `
+                <span class="compression-ratio good">
+                    ${((1 - data.compression_ratio) * 100).toFixed(1)}% saved
+                </span>
+                <div class="small text-muted">
+                    ${(data.compressed_size / 1024 / 1024).toFixed(1)} MB final
+                </div>
+            ` : '<span class="text-muted">No compression</span>'}
+        </td>
+        <td>
+            <div class="processing-status processing">
+                <span class="status-indicator status-processing"></span>
+                Processing
+            </div>
+        </td>
+        <td>
+            <span class="text-muted">Analyzing...</span>
+        </td>
+        <td>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-sm btn-outline-info" disabled>
+                    <i data-feather="eye" style="width: 14px; height: 14px;"></i>
+                </button>
+            </div>
+        </td>
+    `;
+    tbody.insertBefore(row, tbody.firstChild);
+    feather.replace();
+}
+
+function updateRecordingStatus(recordingId, data) {
+    const row = document.querySelector(`[data-recording-id="${recordingId}"]`);
+    if (!row) return;
+
+    // Update status
+    const statusCell = row.querySelector('.processing-status');
+    if (data.error) {
+        statusCell.className = 'processing-status failed';
+        statusCell.innerHTML = `
+            <span class="status-indicator status-offline"></span>
+            Failed
+        `;
+    } else {
+        statusCell.className = 'processing-status completed';
+        statusCell.innerHTML = `
+            <span class="status-indicator status-online"></span>
+            Completed
+        `;
+    }
+
+    // Update RFI detection status
+    const rfiCell = row.cells[5];
+    if (data.rfi_detected && data.detections_found) {
+        rfiCell.innerHTML = `
+            <span class="badge bg-warning text-dark">
+                <i data-feather="zap" style="width: 14px; height: 14px;"></i>
+                ${data.detections_found} RFI
+            </span>
+        `;
+    } else if (!data.error) {
+        rfiCell.innerHTML = `
+            <span class="badge bg-success">
+                <i data-feather="check" style="width: 14px; height: 14px;"></i>
+                Clean
+            </span>
+        `;
+    }
+
+    // Enable view button if processing completed successfully
+    if (!data.error) {
+        const viewBtn = row.querySelector('button');
+        viewBtn.disabled = false;
+    }
+
+    feather.replace();
+}
+</script>
+{% endblock %}
